@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon Product Scraper</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Amazon Product Scraper</h1>
+        
+        <div class="search-container">
+            <input type="text" id="keyword" placeholder="Digite uma palavra-chave...">
+            <button onclick="searchProducts()">Buscar</button>
+        </div>
+
+        <div id="loading" class="loading">Buscando produtos...</div>
+        <div id="error" class="error"></div>
+        <div id="products" class="products-grid"></div>
+    </div>
+
+    <script>
+        async function searchProducts() {
+            const keyword = document.getElementById('keyword').value;
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const productsContainer = document.getElementById('products');
+
+            if (!keyword) {
+                error.textContent = 'Por favor, digite uma palavra-chave';
+                error.style.display = 'block';
+                return;
+            }
+
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            productsContainer.innerHTML = '';
+
+            try {
+                const response = await fetch(`http://localhost:3000/api/scrape?keyword=${encodeURIComponent(keyword)}`);
+                const products = await response.json();
+
+                if (response.ok) {
+                    displayProducts(products);
+                } else {
+                    throw new Error(products.error || 'Erro ao buscar produtos');
+                }
+            } catch (err) {
+                error.textContent = err.message;
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        function displayProducts(products) {
+            const productsContainer = document.getElementById('products');
+            
+            if (products.length === 0) {
+                const error = document.getElementById('error');
+                error.textContent = 'Nenhum produto encontrado';
+                error.style.display = 'block';
+                return;
+            }
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+
+                card.innerHTML = `
+                    ${product.imageUrl ? `<img src="${product.imageUrl}" alt="${product.title}">` : ''}
+                    <h3>${product.title}</h3>
+                    ${product.rating ? `<div class="rating">★ ${product.rating.toFixed(1)}</div>` : ''}
+                    ${product.reviews ? `<div class="reviews">${product.reviews} avaliações</div>` : ''}
+                `;
+
+                productsContainer.appendChild(card);
+            });
+        }
+    </script>
+</body>
+</html> 
